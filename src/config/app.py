@@ -1,5 +1,10 @@
+from pathlib import Path
+
 from pydantic import BaseModel
 
-class AppConfig(BaseModel):
-    ...
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+class AppConfig(BaseModel):
+    title: str = "УруруVPN Backend"
+    host: str = "0.0.0.0"
+    port: int = 8000
