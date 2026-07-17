@@ -1,8 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 import aiohttp
 import ssl
 
+from src.exceptions.x_ui_exception_handler import ThreeXUIExceptionHandler
+from src.repos.http_connector.get_http_session import get_http_session
 from src.config.settings import settings
 
 
@@ -17,8 +19,11 @@ headers = \
         "Accept": "application/json"
     }
 
+
 @router.get("/list")
-async def get_all_inbounds():
+async def get_all_inbounds(
+        session: aiohttp.ClientSession = Depends(get_http_session)
+):
     route = "/inbounds/list"
     url = f"{base_url}{route}"
 
@@ -26,14 +31,15 @@ async def get_all_inbounds():
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
 
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url, headers=headers, ssl=ssl_context) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data
-                else:
-                    text = await response.text()
+    try:
+        async with session.get(url, headers=headers, ssl=ssl_context) as response:
+            if response.status == 200:
+                data = await response.json()
 
-        except aiohttp.ClientError as e:
-            print(f"Ошибка сети: {e}")
+                ThreeXUIExceptionHandler.handle_response(data)
+                return data
+            else:
+                text = await response.text()
+
+    except aiohttp.ClientError as e:
+        print(f"Ошибка сети: {e}")
