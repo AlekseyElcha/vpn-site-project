@@ -3,7 +3,7 @@ from typing import Dict
 
 def extract_basic_client_info(
         data: Dict[str, str]
-):
+) -> Dict[str, str | int]:
     info_block = data.get("obj", {})
     client_data = info_block.get("client", {})
 
