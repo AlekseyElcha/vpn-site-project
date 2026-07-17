@@ -1,13 +1,13 @@
 import uuid
-from datetime import datetime
-
-from sqlalchemy import text, DateTime, JSON
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedSQLExpression
+from typing import List
+from sqlalchemy import text, BigInteger, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as SQLAUUID
 
 
 class Base(DeclarativeBase):
     pass
+
 
 class UserModel(Base):
     __tablename__ = "users"
@@ -17,17 +17,18 @@ class UserModel(Base):
         primary_key=True,
         server_default=text("gen_random_uuid()"),
     )
-    email: Mapped[str] = mapped_column(
+
+    tg_id: Mapped[int] = mapped_column(
         unique=True,
         index=True,
         nullable=False
     )
-    tg_id: Mapped[int] = mapped_column(
-        unique=True,
-        index=True,
-        nullable=True
-    )
 
+    clients: Mapped[List["ClientModel"]] = relationship(
+        "ClientModel",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
 
 
 class ClientModel(Base):
@@ -42,12 +43,19 @@ class ClientModel(Base):
         unique=True,
         index=True,
     )
-    total_gb: Mapped[int] = mapped_column()
+
+    tg_id: Mapped[int] = mapped_column(
+        ForeignKey("users.tg_id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
+    )
+
+    total_gb: Mapped[int] = mapped_column(BigInteger)
     expiry_time: Mapped[int] = mapped_column(
+        BigInteger,
         nullable=False,
         index=True
     )
     enable: Mapped[bool] = mapped_column()
-    inbounds: Mapped[list] = mapped_column(JSON, default=list)
 
-
+    user: Mapped["UserModel"] = relationship("UserModel", back_populates="clients")
