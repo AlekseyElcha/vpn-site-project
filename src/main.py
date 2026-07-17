@@ -6,18 +6,15 @@ from fastapi import FastAPI
 from src.fastapi_startup import start
 from src.api.v1.inbounds import router as inbounds_router
 from src.api.v1.clients import router as clients_router
+from src.auth.autherization import router as auth_router
 
-
-http_session: aiohttp.ClientSession | None = None
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    http_session = aiohttp.ClientSession()
+    app.state.http_session = aiohttp.ClientSession()
     await start()
     yield
-    if http_session:
-        await http_session.close()
-        print("Глобальная HTTP-сессия aiohttp закрыта.")
+    await app.state.http_session.close()
 
     print("started")
 
@@ -43,6 +40,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(router=inbounds_router)
 app.include_router(router=clients_router)
+app.include_router(router=auth_router)
 
 @app.get("/")
 async def root():
