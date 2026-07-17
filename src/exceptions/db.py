@@ -1,6 +1,14 @@
-class VPNBaseException(BaseException):
+class DBBaseException(BaseException):
     pass
 
 
-class ClientAlreadyExists(VPNBaseException):
+class ClientAlreadyExists(DBBaseException):
+    pass
+
+
+class UserAlreadyExists(DBBaseException):
+    pass
+
+
+class DBCrudException(BaseException):
     pass
