@@ -13,11 +13,6 @@ async def user_existence_by_tg_id(
     query = select(UserModel).where(UserModel.tg_id == tg_id)
     try:
         result = await session.execute(query)
-        await session.commit()
-
-        user_existence = True if result.scalar_one() else False
-        return user_existence
-
-    except SQLAlchemyError:
-        await session.rollback()
-        raise DBCrudException
+        return True if result.scalar_one_or_none() is not None else False
+    except SQLAlchemyError as e:
+        raise DBCrudException from e
