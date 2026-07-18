@@ -32,6 +32,7 @@ class ClientUpdateSchema(BaseModel):
 
 class NewUserSchema(BaseModel):
     tg_id: int
+    balance: int
 
 
 class TelegramAuthSchema(BaseModel):
@@ -42,3 +43,11 @@ class TelegramAuthSchema(BaseModel):
     photo_url: Optional[str] = None
     auth_date: int
     hash: str
+
+
+class PaymentRecordSchema(BaseModel):
+    tg_id: int
+    item_id: str
+    time: int
+    amount: int
+

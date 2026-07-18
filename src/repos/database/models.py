@@ -17,13 +17,17 @@ class UserModel(Base):
         primary_key=True,
         server_default=text("gen_random_uuid()"),
     )
-
     tg_id: Mapped[int] = mapped_column(
+        BigInteger,
         unique=True,
         index=True,
         nullable=False
     )
-
+    balance: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        index=True
+    )
     clients: Mapped[List["ClientModel"]] = relationship(
         "ClientModel",
         back_populates="user",
@@ -59,3 +63,30 @@ class ClientModel(Base):
     enable: Mapped[bool] = mapped_column()
 
     user: Mapped["UserModel"] = relationship("UserModel", back_populates="clients")
+
+
+class PaymentModel(Base):
+    __tablename__ = "payments"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        SQLAUUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()")
+    )
+    tg_id: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        index=True
+    )
+    item_id: Mapped[str] = mapped_column(
+        nullable=False,
+        index=True
+    )
+    time: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+    )
+    amount: Mapped[int] = mapped_column(
+        nullable=False
+    )
+

@@ -5,7 +5,7 @@ from src.exceptions.db import DBCrudException
 from src.dtos.schemas import NewUserSchema
 from src.exceptions.db import ClientAlreadyExists
 from src.dtos.schemas import NewClientSchema
-from src.repos.database.models import ClientModel
+from src.repos.database.models import ClientModel, UserModel
 
 
 async def add_new_client_to_db(
@@ -36,10 +36,10 @@ async def add_new_user_to_db(
         new_user: NewUserSchema,
         session: AsyncSession
 ):
-    user = new_user.model_dump()
+    user = UserModel(**new_user.model_dump())
     session.add(user)
     try:
-        await session.commit()
+        await session.flush()
         await session.refresh(user)
     except IntegrityError:
         await session.rollback()
