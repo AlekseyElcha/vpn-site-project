@@ -7,6 +7,8 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from pydantic import BaseModel
 
+from src.core.clients.toggle_client import enable_clients_by_user_tg_id
+from src.repos.database.crud.basic_utils import get_user_balance, get_user_clients
 from src.dtos.schemas import NewUserSchema
 from src.repos.database.crud.basic_utils import user_existence_by_tg_id
 from src.repos.database.crud.creation import add_new_user_to_db
@@ -27,6 +29,7 @@ bot = Bot(
     session=session,
     default=DefaultBotProperties(parse_mode="HTML"),
 )
+
 dp = Dispatcher()
 
 class PayRequest(BaseModel):
@@ -51,8 +54,33 @@ async def process_successful_payment(
     payload = payment.invoice_payload
     _, user_id, item_id = payload.split(":")
 
+    enable_needed = False
+
     async with asynccontextmanager(get_db_session)() as db_session:
         try:
+            user_exists = await user_existence_by_tg_id(
+                tg_id=int(user_id),
+                session=db_session
+            )
+
+            if not user_exists:
+                await add_new_user_to_db(
+                    new_user=NewUserSchema(
+                        tg_id=int(user_id),
+                        balance=0
+                    ),
+                    session=db_session
+                )
+                old_balance = 0
+            else:
+                old_balance = await get_user_balance(
+                    tg_id=int(user_id),
+                    session=db_session
+                )
+
+            if (old_balance <= 0) and (old_balance + payment.total_amount) > 0:
+                enable_needed = True
+
             await add_payment_record_to_db(
                 new_record=PaymentRecordSchema(
                     tg_id=int(user_id),
@@ -62,25 +90,47 @@ async def process_successful_payment(
                 ),
                 session=db_session,
             )
-            user_exists = await user_existence_by_tg_id(
-                tg_id=int(user_id),
-                session=db_session
+
+            await update_balance(
+                user_tg_id=int(user_id),
+                stars_amount=payment.total_amount,
+                session=db_session,
             )
+
             if not user_exists:
-                await add_new_user_to_db(
-                    new_user=NewUserSchema(
-                        tg_id=int(user_id),
-                        balance=payment.total_amount
-                    ),
-                    session=db_session
+                await bot.send_message(
+                    chat_id=int(user_id),
+                    text="Аккаунт создан, баланс успешно пополнен!",
                 )
             else:
-                await update_balance(
-                    user_tg_id=int(user_id),
-                    stars_amount=payment.total_amount,
-                    session=db_session,
+                await bot.send_message(
+                    chat_id=int(user_id),
+                    text="Баланс успешно пополнен!",
                 )
+                user_clients = await get_user_clients(
+                    tg_id=int(user_id),
+                    session=db_session
+                )
+                await bot.send_message(
+                    chat_id=int(user_id),
+                    text=f"user_clients: {user_clients}, enable_needed: {enable_needed}",
+                )
+                if enable_needed and user_clients:
+                    await bot.send_message(
+                        chat_id=int(user_id),
+                        text="Включаю доступы...",
+                    )
+                    await enable_clients_by_user_tg_id(
+                        client_ids=user_clients,
+                        session=db_session
+                    )
+                    await bot.send_message(
+                        chat_id=int(user_id),
+                        text="Доступы успешно активированы!",
+                    )
+
             await db_session.commit()
+
         except DBCrudException:
             await db_session.rollback()
             print("Ошибка обработки платежа, user_id=%s", user_id)
@@ -90,12 +140,12 @@ async def process_successful_payment(
             )
             await bot.send_message(
                 chat_id=int(user_id),
-                text="С нашей стороны возникла проблема, поэтому мы возвращаем Ваши звёзды 😊",
+                text="В ходе оплаты произошла ошибка, платеж был отменен.",
             )
 
     await bot.send_message(
         chat_id=int(user_id),
-        text=f"Оплата прошла успешно! Активировано: {item_id}",
+        text=f"Оплата прошла успешно!",
     )
 
     if payment_test_mode_enabled:
@@ -106,10 +156,14 @@ async def process_successful_payment(
             )
             await bot.send_message(
                 chat_id=int(user_id),
-                text="Тестовый режим: звёзды автоматически возвращены."
+                text="Тестовый режим - звёзды возвращены!"
             )
-        except Exception:
-            print("Не удалось выполнить автовозврат")
+        except Exception as e:
+            print(f"Не удалось выполнить автовозврат: {e}")
+
+
+
+
 
 
 async def main():

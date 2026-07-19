@@ -44,7 +44,8 @@ async def telegram_auth(
         try:
             await add_new_user_to_db(
                 new_user=NewUserSchema(
-                    tg_id=auth_data.id
+                    tg_id=auth_data.id,
+                    balance=0
                 ),
                 session=db_session
             )
