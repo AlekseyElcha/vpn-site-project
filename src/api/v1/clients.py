@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 import aiohttp
 import ssl
@@ -177,5 +177,3 @@ async def update_client(
             "msg": "success"
         }
     )
-
-
