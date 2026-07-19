@@ -1,4 +1,5 @@
 import uuid
+from typing import Annotated, Dict, Any
 
 from fastapi import APIRouter
 
@@ -10,9 +11,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import JSONResponse
 
+from src.core.clients.client_info import get_client_info
 from src.repos.database.crud.update import update_db_client
 from src.core.clients.update_client import update_vpn_client
-from src.exceptions.x_ui_exception_handler import ThreeXUIExceptionHandler
 from src.exceptions.db import DBCrudException
 from src.repos.database.crud.removal import delete_client_from_db
 from src.exceptions.http import HttpRequestException
@@ -25,7 +26,7 @@ from src.dtos.schemas import NewClientSchema, ClientUpdateSchema
 from src.config.settings import settings
 from src.utils.response_parser import extract_basic_client_info
 
-router = APIRouter(prefix="/clients", tags=["clients"])
+router = APIRouter(prefix="/clients", tags=["Clients"])
 
 token = settings.vpn_panel.auth_token
 base_url = settings.vpn_panel.panel_url
@@ -37,32 +38,20 @@ headers = \
     }
 
 
-@router.get("/get")
-async def get_all_inbounds(
+@router.get("/info")
+async def get_basic_client_info(
+        http_session: Annotated[aiohttp.ClientSession, Depends(get_http_session)],
         email: str = Query(...),
-        session: aiohttp.ClientSession = Depends(get_http_session)
-):
-    route = f"/clients/get/{email}"
-    url = f"{base_url}{route}"
+) -> Dict[str, Any]:
+    info = await get_client_info(
+        email=email,
+        session=http_session
+    )
+    basic_info = extract_basic_client_info(
+        data=info
+    )
 
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
-
-    try:
-        async with session.get(url, headers=headers, ssl=ssl_context) as response:
-            if response.status == 200:
-                data = await response.json()
-
-                ThreeXUIExceptionHandler.handle_response(data)
-
-                return extract_basic_client_info(data)
-
-            text = await response.text()
-            raise HTTPException(status_code=response.status, detail=f"Ошибка API: {text}")
-
-    except aiohttp.ClientError as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка внешнего сервиса: {str(e)}")
+    return basic_info
 
 
 @router.post("/add")
