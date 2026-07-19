@@ -22,7 +22,7 @@ async def user_existence_by_tg_id(
         raise DBCrudException from e
 
 
-async def get_user_balance(
+async def get_user_balance_by_tg_id(
         tg_id: int,
         session: AsyncSession
 ) -> int:

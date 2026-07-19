@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Request
 from aiogram import types
 from src.payments.bot import PayRequest, bot, dp
 
-router = APIRouter(prefix="/payment", tags=["payment"])
+router = APIRouter(prefix="/payment", tags=["Payment"])
 
 
 @router.post("/pay")

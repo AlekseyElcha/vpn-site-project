@@ -1,9 +1,11 @@
 import ssl
+from typing import Dict, Any
+
 import aiohttp
+from fastapi import HTTPException
 
 from src.exceptions.x_ui_exception_handler import ThreeXUIExceptionHandler
 from src.config.settings import settings
-from src.dtos.schemas import NewClientSchema
 
 headers = \
     {
@@ -14,31 +16,28 @@ headers = \
 base_url = settings.vpn_panel.panel_url
 
 
-async def create_new_vpn_client(
-        new_client: NewClientSchema,
+async def get_client_info(
+        email: str,
         session: aiohttp.ClientSession
-):
-    route = f"/clients/add"
+) -> Dict[str, Any]:
+    route = f"/clients/get/{email}"
     url = f"{base_url}{route}"
 
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
 
-    client_data = new_client.model_dump(by_alias=True)
-
     try:
-        async with session.post(url, headers=headers, json=client_data, ssl=ssl_context) as response:
-            if response.status in (200, 201):
+        async with session.get(url, headers=headers, ssl=ssl_context) as response:
+            if response.status == 200:
                 data = await response.json()
 
                 ThreeXUIExceptionHandler.handle_response(data)
+
                 return data
 
             text = await response.text()
-            print(text)
-
+            raise HTTPException(status_code=response.status, detail=f"Ошибка API: {text}")
 
     except aiohttp.ClientError as e:
-        print(f"Ошибка HTTP-запроса: {e}")
-
+        raise HTTPException(status_code=500, detail=f"Ошибка внешнего сервиса: {str(e)}")

@@ -8,7 +8,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from pydantic import BaseModel
 
 from src.core.clients.toggle_client import enable_clients_by_user_tg_id
-from src.repos.database.crud.basic_utils import get_user_balance, get_user_clients
+from src.repos.database.crud.basic_utils import get_user_balance_by_tg_id, get_user_clients
 from src.dtos.schemas import NewUserSchema
 from src.repos.database.crud.basic_utils import user_existence_by_tg_id
 from src.repos.database.crud.creation import add_new_user_to_db
@@ -73,7 +73,7 @@ async def process_successful_payment(
                 )
                 old_balance = 0
             else:
-                old_balance = await get_user_balance(
+                old_balance = await get_user_balance_by_tg_id(
                     tg_id=int(user_id),
                     session=db_session
                 )
@@ -160,10 +160,6 @@ async def process_successful_payment(
             )
         except Exception as e:
             print(f"Не удалось выполнить автовозврат: {e}")
-
-
-
-
 
 
 async def main():
