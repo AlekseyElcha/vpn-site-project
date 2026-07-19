@@ -8,7 +8,7 @@ from src.repos.http_connector.get_http_session import get_http_session
 from src.config.settings import settings
 
 
-router = APIRouter(prefix="/inbounds", tags=["inbounds"])
+router = APIRouter(prefix="/inbounds", tags=["Inbounds"])
 
 token = settings.vpn_panel.auth_token
 base_url = settings.vpn_panel.panel_url

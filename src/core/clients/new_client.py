@@ -1,7 +1,5 @@
 import ssl
-
 import aiohttp
-from aiohttp.pytest_plugin import AiohttpClient
 
 from src.exceptions.x_ui_exception_handler import ThreeXUIExceptionHandler
 from src.config.settings import settings
