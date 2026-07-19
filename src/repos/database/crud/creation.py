@@ -35,7 +35,7 @@ async def add_new_client_to_db(
 async def add_new_user_to_db(
         new_user: NewUserSchema,
         session: AsyncSession
-):
+) -> UserModel:
     user = UserModel(**new_user.model_dump())
     session.add(user)
     try:
