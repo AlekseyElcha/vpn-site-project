@@ -23,11 +23,15 @@ class NewClientSchema(BaseModel):
 
 
 class ClientUpdateSchema(BaseModel):
+    email: Optional[str] = None
+    total_gb: Optional[int] = Field(None, validation_alias="total_gb", serialization_alias="totalGB")
+    expiry_time: Optional[int] = Field(None, validation_alias="expiry_time", serialization_alias="expiryTime")
+    tg_id: Optional[int] = Field(0, validation_alias="tg_id", serialization_alias="tgId")
+    enable: Optional[bool] = True
+
+
+class DisableClientSchema(BaseModel):
     email: str
-    total_gb: int = Field(..., validation_alias="total_gb", serialization_alias="totalGB")
-    expiry_time: int = Field(..., validation_alias="expiry_time", serialization_alias="expiryTime")
-    tg_id: int = Field(0, validation_alias="tg_id", serialization_alias="tgId")
-    enable: bool = True
 
 
 class NewUserSchema(BaseModel):
