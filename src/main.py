@@ -20,23 +20,6 @@ async def lifespan(_: FastAPI):
     print("started")
 
 
-import logging
-from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
-from sqlalchemy.exc import SQLAlchemyError
-
-app = FastAPI()
-
-@app.exception_handler(SQLAlchemyError)
-async def database_exception_handler(request: Request, exc: SQLAlchemyError):
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "detail": "Внутренняя ошибка сервера базы данных. Пожалуйста, попробуйте позже."
-        }
-    )
-
-
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(router=inbounds_router)
