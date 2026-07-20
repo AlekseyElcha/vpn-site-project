@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class ClientDetailSchema(BaseModel):
-    email: str
+    email: str  # email - название клиента. использоать tg-id!!!
     total_gb: int = Field(..., validation_alias="total_gb", serialization_alias="totalGB")
     expiry_time: int = Field(..., validation_alias="expiry_time", serialization_alias="expiryTime")
     tg_id: int = Field(0, validation_alias="tg_id", serialization_alias="tgId")

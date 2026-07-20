@@ -3,7 +3,11 @@ from typing import Dict, Any
 
 import aiohttp
 from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.exceptions.db import DBCrudException
+from src.repos.database.models import ClientModel
 from src.exceptions.x_ui_exception_handler import ThreeXUIExceptionHandler
 from src.config.settings import settings
 
@@ -41,3 +45,19 @@ async def get_client_info(
 
     except aiohttp.ClientError as e:
         raise HTTPException(status_code=500, detail=f"Ошибка внешнего сервиса: {str(e)}")
+
+
+async def get_subscriptions_by_tg_id(
+        tg_id: int,
+        session: AsyncSession
+):
+    query = select(ClientModel).where(ClientModel.tg_id == tg_id)
+
+    try:
+        data = await session.execute(query)
+        results = data.scalars().all()
+        await session.flush()
+
+        return results
+    except:
+        raise DBCrudException
