@@ -7,6 +7,8 @@ def extract_basic_client_info(
     info_block = data.get("obj", {})
     client_data = info_block.get("client", {})
 
+    sub_id = client_data.get("subId")
+
     used_traffic = info_block.get("usedTraffic")
     total_traffic = client_data.get("totalGB")
 
@@ -20,7 +22,8 @@ def extract_basic_client_info(
         "email": client_data.get("email"),
         "totalGB": total_gb ,
         "expiryTime": client_data.get("expiryTime"),
-        "trafficLeft": traffic_left
+        "trafficLeft": traffic_left,
+        "subId": sub_id
     }
 
     return client_info
