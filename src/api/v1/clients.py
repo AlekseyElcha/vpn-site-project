@@ -4,13 +4,13 @@ from typing import Annotated, Dict, Any
 from fastapi import APIRouter
 
 import aiohttp
-import ssl
 
 from fastapi.params import Query, Depends
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import JSONResponse
 
+from src.core.utils import build_vpn_subscription_link_from_params
 from src.core.clients.client_info import get_client_info
 from src.repos.database.crud.update import update_db_client
 from src.core.clients.update_client import update_vpn_client
@@ -52,6 +52,43 @@ async def get_basic_client_info(
     )
 
     return basic_info
+
+
+@router.get("/link")
+async def get_subscription_link(
+        http_session: Annotated[aiohttp.ClientSession, Depends(get_http_session)],
+        email: str = Query(...)
+):
+    client_info = await get_client_info(
+        email=email,
+        session=http_session
+    )
+
+    basic_info = extract_basic_client_info(data=client_info)
+
+    sub_id = basic_info.get("subId", "")
+
+    if sub_id and isinstance(sub_id, str):
+        sub_link = build_vpn_subscription_link_from_params(
+            domain=settings.vpn_panel.domain,
+            port=settings.vpn_panel.subscription_port,
+            prefix=settings.vpn_panel.subscription_prefix,
+            sub_id=sub_id
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "msg": "success",
+                "link": sub_link
+            }
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при создании ссылки."
+        )
+
 
 
 @router.post("/add")
