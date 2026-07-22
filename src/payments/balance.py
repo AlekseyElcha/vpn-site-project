@@ -8,7 +8,7 @@ from src.repos.database.models import UserModel
 
 async def update_balance(
         user_tg_id: int,
-        stars_amount: int,
+        stars_amount: int | float,
         session: AsyncSession
 ) -> None:
     query = (update(UserModel)
