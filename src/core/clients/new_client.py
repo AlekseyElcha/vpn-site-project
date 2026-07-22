@@ -25,7 +25,7 @@ async def create_new_vpn_client(
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
 
-    client_data = new_client.model_dump(by_alias=True)
+    client_data = new_client.model_dump(by_alias=True, exclude={"creation_time"})
 
     try:
         async with session.post(url, headers=headers, json=client_data, ssl=ssl_context) as response:
@@ -33,7 +33,9 @@ async def create_new_vpn_client(
                 data = await response.json()
 
                 ThreeXUIExceptionHandler.handle_response(data)
-                return data
+                return {
+                    "success": True
+                }
 
             text = await response.text()
             print(text)
