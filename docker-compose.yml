@@ -19,26 +19,8 @@ services:
           memory: 512M
         reservations:
           memory: 256M
-
-  redis:
-    image: redis:7-alpine
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 128M
-
 volumes:
   postgres_data:
-  redis_data:
 
 networks:
   app-network:
