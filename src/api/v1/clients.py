@@ -1,3 +1,4 @@
+import time
 import uuid
 from typing import Annotated, Dict, Any
 
@@ -133,7 +134,7 @@ async def create_new_client(
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={
-            "msg": "success"
+            "success": True
         }
     )
 
@@ -145,18 +146,12 @@ async def delete_client(
         db_session: AsyncSession = Depends(get_db_session),
         http_session: aiohttp.ClientSession = Depends(get_http_session)
 ) -> JSONResponse:
-    # try:
     # обработка через спец. класс
     await delete_vpn_client(
             email=email,
             keep_traffic=keep_traffic,
             session=http_session
         )
-    # except HttpRequestException:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Произошла ошибка запроса к VPN-серверу."
-    #     )
     try:
         await delete_client_from_db(
             email=email,

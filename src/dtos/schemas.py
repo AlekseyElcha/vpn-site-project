@@ -1,3 +1,4 @@
+import time
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -5,6 +6,7 @@ from pydantic import BaseModel, Field
 
 class ClientDetailSchema(BaseModel):
     email: str  # email - название клиента. использоать tg-id!!!
+    creation_time: Optional[int] = Field(default_factory=lambda: int(time.time()))
     total_gb: int = Field(..., validation_alias="total_gb", serialization_alias="totalGB")
     expiry_time: int = Field(..., validation_alias="expiry_time", serialization_alias="expiryTime")
     tg_id: int = Field(0, validation_alias="tg_id", serialization_alias="tgId")
@@ -53,5 +55,5 @@ class PaymentRecordSchema(BaseModel):
     tg_id: int
     item_id: str
     time: int
-    amount: int
+    amount: int | float
 

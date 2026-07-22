@@ -45,6 +45,7 @@ async def delete_vpn_client(
                 data = await response.json()
 
                 ThreeXUIExceptionHandler.handle_response(data)
+                return data
 
             text = await response.text()
             raise ThreeXUIException

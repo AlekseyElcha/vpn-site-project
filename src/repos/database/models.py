@@ -23,7 +23,7 @@ class UserModel(Base):
         index=True,
         nullable=False
     )
-    balance: Mapped[int] = mapped_column(
+    balance: Mapped[float] = mapped_column(
         BigInteger,
         nullable=False,
         index=True
@@ -47,13 +47,16 @@ class ClientModel(Base):
         unique=True,
         index=True,
     )
-
+    creation_time: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        index=True
+    )
     tg_id: Mapped[int] = mapped_column(
         ForeignKey("users.tg_id", ondelete="CASCADE"),
         index=True,
         nullable=False
     )
-
     total_gb: Mapped[int] = mapped_column(BigInteger)
     expiry_time: Mapped[int] = mapped_column(
         BigInteger,

@@ -9,3 +9,4 @@ class VPNPanelConfig(BaseModel):
     subscription_prefix: str
     auth_token: str
     panel_url: str
+    server_status_comment: str

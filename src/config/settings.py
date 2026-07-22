@@ -2,7 +2,6 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.config.payments import PaymentConfig
-from src.config.jwt import AuthJWT
 from src.config.bot import TgBotConfig
 from src.config.VPNPanelConfig import VPNPanelConfig
 from src.config.db import DBConfig
@@ -14,7 +13,6 @@ class Settings(BaseSettings):
     app: AppConfig = Field(default_factory=AppConfig)
     vpn_panel: VPNPanelConfig
     bot: TgBotConfig
-    jwt: AuthJWT = Field(default_factory=AuthJWT)
     payments: PaymentConfig
 
     model_config = SettingsConfigDict(
