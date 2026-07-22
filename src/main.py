@@ -2,12 +2,13 @@ from contextlib import asynccontextmanager
 
 import aiohttp
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.fastapi_startup import start
 from src.api.v1.inbounds import router as inbounds_router
 from src.api.v1.clients import router as clients_router
 from src.api.v1.users import router as users_router
-from src.auth.autherization import router as auth_router
+from src.api.v1.server import router as server_router
 from src.payments.pay import router as payment_router
 
 
@@ -15,33 +16,17 @@ from src.payments.pay import router as payment_router
 async def lifespan(_: FastAPI):
     app.state.http_session = aiohttp.ClientSession()
     await start()
+    print("Application started successfully")
     yield
     await app.state.http_session.close()
 
-    print("started")
-
 
 tags_metadata = [
-    {
-        "name": "Inbounds",
-        "description": "Получение данных по инбаундам VPN-сервера.",
-    },
-    {
-        "name": "Clients",
-        "description": "Работа с VPN-клиентами (подписками).",
-    },
-    {
-        "name": "Users",
-        "description": "Работа с пользователями VPN-сервиса.",
-    },
-    {
-        "name": "Authentication",
-        "description": "Работа с авторизацией в VPN-сервисе.",
-    },
-    {
-        "name": "Payment",
-        "description": "Оплата услуг с использованием Telegram Stars",
-    },
+    {"name": "Inbounds", "description": "Управление доступом к протоколам VPN."},
+    {"name": "Clients", "description": "Работа с VPN-клиентами."},
+    {"name": "Users", "description": "Работа с администраторами."},
+    {"name": "Payment", "description": "Прием оплаты через Telegram Stars"},
+    {"name": "Server", "description": "Получение метрик VPN-сервера"},
 ]
 
 
@@ -50,11 +35,21 @@ app = FastAPI(
     openapi_tags=tags_metadata
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:443",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(router=inbounds_router)
 app.include_router(router=clients_router)
-app.include_router(router=auth_router)
 app.include_router(router=payment_router)
 app.include_router(router=users_router)
+app.include_router(router=server_router)
 
 @app.get("/")
 async def root():
