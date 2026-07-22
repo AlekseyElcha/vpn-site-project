@@ -27,3 +27,4 @@ def extract_basic_client_info(
     }
 
     return client_info
+
