@@ -4,21 +4,23 @@ import aiohttp
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.backend_logging import logger
 from src.fastapi_startup import start
 from src.api.v1.inbounds import router as inbounds_router
 from src.api.v1.clients import router as clients_router
 from src.api.v1.users import router as users_router
 from src.api.v1.server import router as server_router
-from src.payments.pay import router as payment_router
+from src.api.v1.pay import router as payment_router
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     app.state.http_session = aiohttp.ClientSession()
     await start()
-    print("Application started successfully")
+    logger.info("Application started successfully")
     yield
     await app.state.http_session.close()
+    logger.info("Application stopped successfully")
 
 
 tags_metadata = [

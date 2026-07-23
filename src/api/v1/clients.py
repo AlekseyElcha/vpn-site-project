@@ -1,16 +1,14 @@
-import time
 import uuid
 from typing import Annotated, Dict, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Depends, HTTPException, status
 
 import aiohttp
 
-from fastapi.params import Query, Depends
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import JSONResponse
 
+from src.main import logger
 from src.core.utils import build_vpn_subscription_link_from_params
 from src.core.clients.client_info import get_client_info
 from src.repos.database.crud.update import update_db_client
@@ -44,6 +42,7 @@ async def get_basic_client_info(
         http_session: Annotated[aiohttp.ClientSession, Depends(get_http_session)],
         email: str = Query(...),
 ) -> Dict[str, Any]:
+    logger.info(f"GET /info request -> email: {email}")
     info = await get_client_info(
         email=email,
         session=http_session
@@ -52,6 +51,7 @@ async def get_basic_client_info(
         data=info
     )
 
+    logger.info("GET /info request -> 200 OK")
     return basic_info
 
 
@@ -60,12 +60,15 @@ async def get_subscription_link(
         http_session: Annotated[aiohttp.ClientSession, Depends(get_http_session)],
         email: str = Query(...)
 ):
+    logger.info("GET /link request -> email: {}".format(email))
     client_info = await get_client_info(
         email=email,
         session=http_session
     )
+    logger.debug("Fetched client_info: {}".format(client_info))
 
     basic_info = extract_basic_client_info(data=client_info)
+    logger.debug("Extracted basic client info: {}".format(basic_info))
 
     sub_id = basic_info.get("subId", "")
 
@@ -76,7 +79,9 @@ async def get_subscription_link(
             prefix=settings.vpn_panel.subscription_prefix,
             sub_id=sub_id
         )
+        logger.debug("Created subscription link: {}".format(sub_link))
 
+        logger.info("GET /link request ->200 OK")
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
@@ -85,8 +90,9 @@ async def get_subscription_link(
             }
         )
     else:
+        logger.error("Error building subscription link: no sub_id info")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Произошла ошибка при создании ссылки."
         )
 
@@ -98,6 +104,8 @@ async def create_new_client(
         db_session: AsyncSession = Depends(get_db_session),
         http_session: aiohttp.ClientSession = Depends(get_http_session)
 ) -> JSONResponse:
+    logger.info("POST /add request -> new_client: {}".format(new_client))
+
     email_extra = str(uuid.uuid4())[:5]
 
     client_email = new_client.client.email + email_extra
@@ -108,20 +116,26 @@ async def create_new_client(
         new_client=new_client,
         session=http_session
     )
+    logger.debug("Created new vpn client successfully, email: {}".format(client_email))
 
     try:
         await add_new_client_to_db(
         new_client=new_client,
         session=db_session
         )
+        logger.debug("Created new db client successfully")
+
     except Exception as e:
+        logger.error("Error while creating new db client: {}".format(e))
         try:
             await delete_vpn_client(
                 email=new_client.client.email,
                 keep_traffic=0,
                 session=http_session
             )
+            logger.debug("Deleted vpn client successfully, email: {}".format(new_client.client.email))
         except HttpRequestException:
+            logger.error("Error while deleting vpn client: {}".format(e))
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Произошла ошибка внутренняя ошибка сервера."
@@ -131,6 +145,7 @@ async def create_new_client(
             detail="Произошла ошибка внутренняя ошибка сервера."
         )
 
+    logger.info("POST /add request -> 200 OK")
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={
@@ -146,22 +161,28 @@ async def delete_client(
         db_session: AsyncSession = Depends(get_db_session),
         http_session: aiohttp.ClientSession = Depends(get_http_session)
 ) -> JSONResponse:
+    logger.info("POST /delete request -> email: {}".format(email))
+
     # обработка через спец. класс
     await delete_vpn_client(
             email=email,
             keep_traffic=keep_traffic,
             session=http_session
         )
+    logger.debug("Deleted vpn client successfully, email: {}".format(email))
     try:
         await delete_client_from_db(
             email=email,
             session=db_session
         )
+        logger.debug("Deleted db client successfully, email: {}".format(email))
     except DBCrudException:
+        logger.error("Error while deleting db client: {}".format(email))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Произошла внутренняя ошибка сервера."
         )
+    logger.info("POST /delete request -> 200 OK")
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
@@ -176,22 +197,30 @@ async def update_client(
         db_session: AsyncSession = Depends(get_db_session),
         http_session: aiohttp.ClientSession = Depends(get_http_session)
 ) -> JSONResponse:
+    logger.info("POST /update request -> update_data: {}".format(update_data))
+
     client_dict = update_data.model_dump(by_alias=True)
+    logger.debug("Client dict for update: {}".format(client_dict))
     await update_vpn_client(
         email=update_data.email,
         updated_client=client_dict,
         session=http_session
     )
+    logger.debug("Updated vpn client successfully, email: {}".format(update_data.email))
     try:
         await update_db_client(
             updated_client=update_data,
             session=db_session
         )
+        logger.debug("Updated db client successfully, email: {}".format(update_data.email))
     except DBCrudException:
+        logger.error("Error while updating db client: {}".format(update_data.email))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Произошла внутренняя ошибка сервера."
         )
+
+    logger.info("POST /update request -> 200 OK")
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={

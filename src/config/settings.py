@@ -1,6 +1,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from src.config.logs import LoggingConfig
 from src.config.payments import PaymentConfig
 from src.config.bot import TgBotConfig
 from src.config.VPNPanelConfig import VPNPanelConfig
@@ -14,6 +15,7 @@ class Settings(BaseSettings):
     vpn_panel: VPNPanelConfig
     bot: TgBotConfig
     payments: PaymentConfig
+    logs: LoggingConfig
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -23,3 +25,4 @@ class Settings(BaseSettings):
     )
 
 settings = Settings()
+

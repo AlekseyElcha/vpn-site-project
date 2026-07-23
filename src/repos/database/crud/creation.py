@@ -39,6 +39,24 @@ async def add_new_user_to_db(
     user = UserModel(**new_user.model_dump())
     session.add(user)
     try:
+        await session.commit()
+        await session.refresh(user)
+    except IntegrityError:
+        await session.rollback()
+    except SQLAlchemyError:
+        await session.rollback()
+        raise DBCrudException
+
+    return user
+
+
+async def add_new_user_to_db_without_commit(
+        new_user: NewUserSchema,
+        session: AsyncSession
+) -> UserModel:
+    user = UserModel(**new_user.model_dump())
+    session.add(user)
+    try:
         await session.flush()
         await session.refresh(user)
     except IntegrityError:
@@ -48,3 +66,4 @@ async def add_new_user_to_db(
         raise DBCrudException
 
     return user
+
