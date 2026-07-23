@@ -39,7 +39,7 @@ async def add_new_user_to_db(
     user = UserModel(**new_user.model_dump())
     session.add(user)
     try:
-        await session.flush()
+        await session.commit()
         await session.refresh(user)
     except IntegrityError:
         await session.rollback()
